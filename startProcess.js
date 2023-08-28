@@ -319,8 +319,8 @@ function deleteDepartmentFromDatabase(dltDeptID) {
         ])
         .then((answers) => {
             if (answers.confirmDelete) {
-                const query = 'DELETE FROM departments WHERE departmend_id = ?';
-                connection.query(query, [dltDeptID], (err, result) => {
+                const deleteQuery = 'DELETE FROM departments WHERE id = ?';
+                connection.query(deleteQuery, [dltDeptID], (err, result) => {
                     if (err) {
                         console.error('Error deleting department:', err);
                         return;
