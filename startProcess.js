@@ -1,4 +1,18 @@
 const { default: inquirer } = require("inquirer");
+const connection = require('./config/connection');
+
+const choiceList = ['View All Departments', 'View All Roles', 'View All Employees', 'Add A Department', 'Add A Role', 'Add An Employee', 'Update An Employee Role', 'Sum Salaries by Department', 'Delete a Department', 'Exit'];
+
+// Inquirer prompt to start the process (continued on startProcess.js)
+const questions = [
+    {
+        type: 'list',
+        message: 'What would you like to do?',
+        name: 'initChoice',
+        choices: choiceList,
+    }
+  ];
+
 
 const addADept = [
     {
@@ -102,6 +116,7 @@ const deleteDept = [
         name: 'dltDeptID'
     },
 ];
+
 
 // async loop to queue up selections and to allow for loop exit
 async function startProcess() {
@@ -210,7 +225,7 @@ async function startProcess() {
             });
             return sumDeptID;
 
-        case "Delete a department":
+        case "Delete a Department":
             query = inquirer.prompt(deleteDept)
             .then((answers) => { 
                 const dltDeptID = answers.dltDeptID;
