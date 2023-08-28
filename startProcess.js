@@ -1,3 +1,5 @@
+const { default: inquirer } = require("inquirer");
+
 const addADept = [
     {
         type: 'input',
@@ -83,8 +85,25 @@ const updateRole = [
         message:  'What is the DEPARTMENT ID of the role?',
         name: 'updtDeptID'
     }
-]
+];
 
+const sumSalaries = [
+    {
+        type: 'input',
+        message:  'What is the DEPT ID you want to sum for salaries?',
+        name: 'sumDeptID'
+    },
+];
+
+const deleteDept = [
+    {
+        type: 'input',
+        message:  'What is the DEPT ID you want to delete?',
+        name: 'dltDeptID'
+    },
+];
+
+// async loop to queue up selections and to allow for loop exit
 async function startProcess() {
     let shouldContinue = true;
 
@@ -102,6 +121,7 @@ async function startProcess() {
                 console.log('All Departmeents:', results);
             });
             break;
+            
         case "View All Roles":
             query = "SELECT * FROM roles";
             connection.query(query, (err, results) => {
@@ -112,6 +132,7 @@ async function startProcess() {
                 console.log('All Roles:', results);
             });
             break;
+
         case "View All Employees":
             query = "SELECT * FROM employees";
             connection.query(query, (err, results) => {
@@ -122,6 +143,7 @@ async function startProcess() {
                 console.log('All Roles:', results);
             });
             break;
+
         case "Add A Department":
             query = inquirer.prompt(addADept)
             .then((answers) => {
@@ -133,6 +155,7 @@ async function startProcess() {
                 console.error('Error:', error);
             });
             return deptName, deptID;
+
         case "Add A Role":
             query = inquirer.prompt(addARole)
             .then((answers) => {
@@ -146,6 +169,7 @@ async function startProcess() {
                 console.error('Error:', error);
             });
             return roleName, roleID, roleSalary, roleDeptID;
+
         case "Add An Employee":
             query = inquirer.prompt(addAnEmp)
             .then((answers) => {
@@ -160,9 +184,10 @@ async function startProcess() {
                 console.error('Error:', error);
             });
             return empFirstName, empLastName, empDeptID, empRoleID, empMgrID;
+
         case "Update An Employee Role":
             query = inquirer.prompt(updateRole)
-            .then((answers) => { // Build out functionality
+            .then((answers) => { 
                 const updtID = answers.updtID;
                 const updtTitle = answers.updtTitle;
                 const updtSalary = answers.updtSalary;
@@ -173,6 +198,28 @@ async function startProcess() {
                 console.error('Error:', error);
             });
             return updtID, updTitle, updtSalary, updtDeptID;
+
+        case "Sum Salaries by Department":
+            query = inquirer.prompt(sumSalaries)
+            .then((answers) => { 
+                const sumDeptID = answers.sumDeptID;
+                sumSalariesByDepartment(sumDeptID);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+            return sumDeptID;
+
+        case "Delete a department":
+            query = inquirer.prompt(deleteDept)
+            .then((answers) => { 
+                const dltDeptID = answers.dltDeptID;
+                deleteDepartmentFromDatabase(dltDeptID);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            })
+            return dltDeptID;
 
         case "Exit":
             console.log("Exiting...");
@@ -185,9 +232,10 @@ async function startProcess() {
     } while (shouldContinue);
 }
 
+// Adds new department to database
 function addDepartmentToDatabase(deptName, deptID) {
     const query = 'INSERT INTO departments (deptName, deptID) VALUES (?, ?)';
-    connection.query(query, [deptName, deptID], (err, result) => {
+    connection.query(query, [deptName, deptID], (err, results) => {
         if (err) {
             console.error('Error adding department:', err);
             return;
@@ -196,9 +244,10 @@ function addDepartmentToDatabase(deptName, deptID) {
     });
 }
 
+// Adds new role to database
 function addRoleToDatabase(roleName, roleID, roleSalary, roleDeptID) {
     const query = 'INSERT INTO roles (roleName, roleID, roleSalary, roleDeptID) VALUES (?, ?, ?, ?)';
-    connection.query(query, [roleName, roleID, roleSalary, roleDeptID], (err, result) => {
+    connection.query(query, [roleName, roleID, roleSalary, roleDeptID], (err, results) => {
         if (err) {
             console.error('Error adding role:', err);
             return;
@@ -207,9 +256,10 @@ function addRoleToDatabase(roleName, roleID, roleSalary, roleDeptID) {
     });
 }
 
+// Adds new employee to database
 function addEmployeeToDatabase(empFirstName, empLastName, empDeptID, empRoleID, empMgrID) {
     const query = 'INSERT INTO roles (empFirstName, empLastName, empDeptID, empRoleID, empMgrID) VALUES (?, ?, ?, ?, ?)';
-    connection.query(query, [empFirstName, empLastName, empDeptID, empRoleID, empMgrID], (err, result) => {
+    connection.query(query, [empFirstName, empLastName, empDeptID, empRoleID, empMgrID], (err, results) => {
         if (err) {
             console.error('Error adding role:', err);
             return;
@@ -218,9 +268,10 @@ function addEmployeeToDatabase(empFirstName, empLastName, empDeptID, empRoleID, 
     });
 }
 
+// Updates an existing database role
 function updateRoleToDatabase(updtID, updtTitle, updtSalary, updtDeptID) {
     const query = 'UPDATE roles SET title = ?, salary = ?, deptartment_id = ? WHERE id = ?';
-    connection.query(query, [updtTitle, updtSalary, updtDeptID, updtID], (err, result) => {
+    connection.query(query, [updtTitle, updtSalary, updtDeptID, updtID], (err, results) => {
         if (err) {
             console.error('Error updating role:', err);
             return;
@@ -228,5 +279,62 @@ function updateRoleToDatabase(updtID, updtTitle, updtSalary, updtDeptID) {
         console.log('Role changed successfully!');
     });
 }
+
+function sumSalariesByDepartment(sumDeptID) {
+    const query = `
+        SELECT d.dept_name, SUM(r.salary) AS total_salary
+        FROM departments d
+        JOIN roles r ON d.id = r.department_id
+        WHERE d.id = ?
+        GROUP BY d.id, d.dept_name;
+    `;
+
+    connection.query(query, [sumDeptID], (err, results) => {
+        if (err) {
+            console.error('Error calculating salaries by department:', err);
+            return;
+        }
+
+        console.log('Salaries by Department:', results);
+    });
+}
+
+function deleteDepartmentFromDatabase(dltDeptID) {
+    const getDeptNameQuery = 'SELECT dept_name FROM departments WHERE id = ?';
+    connection.query(getDeptNameQuery, [dltDeptID], (err, results) => {
+        if (err) {
+            console.error('Error retrieving department name:', err);
+            return;
+        }
+
+        const departmentName = result[0].dept_name;
+
+    inquirer
+        .prompt([
+            {
+                type: 'confirm',
+                name: 'confirmDelete',
+                message: `Are you sure you want to delete the department "${departmentName}"?`,
+            }
+        ])
+        .then((answers) => {
+            if (answers.confirmDelete) {
+                const query = 'DELETE FROM departments WHERE departmend_id = ?';
+                connection.query(query, [dltDeptID], (err, result) => {
+                    if (err) {
+                        console.error('Error deleting department:', err);
+                        return;
+                    }
+                    console.log('Department deleted successfully!');
+                });
+            } else {
+                console.log('Deletion cancelled.');
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+    }
+)};
 
 module.exports = startProcess;
