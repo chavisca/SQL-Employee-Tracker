@@ -61,16 +61,13 @@ const addAnEmp = [
         name: 'empMgrID'
     }
 ];
-// Role update still needs building
-const updateRoleLookup = [
+
+const updateRole = [
     {
         type: 'input',
         message:  'What is the ROLE ID you want to update?',
         name: 'updtID'
-    }
-];
-
-const updateRole = [
+    },
     {
         type: 'input',
         message:  'What is the TITLE of the role?',
@@ -163,12 +160,16 @@ function startProcess(initChoice) {
         case "Update An Employee Role":
             query = inquirer.prompt(updateRole)
             .then((answers) => { // Build out functionality
-
+                const updtID = answers.updtID;
+                const updtTitle = answers.updtTitle;
+                const updtSalary = answers.updtSalary;
+                const updtDeptID = answers.updtDeptID;
+                updateRoleToDatabase(updtID, updtTitle, updtSalary, updtDeptID);
             })
             .catch(error => {
                 console.error('Error:', error);
             });
-            break;
+            return updtID, updTitle, updtSalary, updtDeptID;
     }
 };
 
@@ -202,6 +203,17 @@ function addEmployeeToDatabase(empFirstName, empLastName, empDeptID, empRoleID, 
             return;
         }
         console.log('Employee added successfully!');
+    });
+}
+
+function updateRoleToDatabase(updtID, updtTitle, updtSalary, updtDeptID) {
+    const query = 'UPDATE roles SET title = ?, salary = ?, deptartment_id = ? WHERE id = ?';
+    connection.query(query, [updtTitle, updtSalary, updtDeptID, updtID], (err, result) => {
+        if (err) {
+            console.error('Error updating role:', err);
+            return;
+        }
+        console.log('Role changed successfully!');
     });
 }
 
