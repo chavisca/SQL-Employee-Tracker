@@ -85,8 +85,11 @@ const updateRole = [
     }
 ]
 
-function startProcess(initChoice) {
-    let query;
+async function startProcess() {
+    let shouldContinue = true;
+
+    do {
+        const { initChoice } = await inquirer.prompt(questions);
 
     switch(initChoice) {
         case "View All Departments": 
@@ -170,8 +173,17 @@ function startProcess(initChoice) {
                 console.error('Error:', error);
             });
             return updtID, updTitle, updtSalary, updtDeptID;
-    }
-};
+
+        case "Exit":
+            console.log("Exiting...");
+            shouldContinue = false;
+            break;
+        
+        default: console.log("Invalid choice.");
+            break;
+        }
+    } while (shouldContinue);
+}
 
 function addDepartmentToDatabase(deptName, deptID) {
     const query = 'INSERT INTO departments (deptName, deptID) VALUES (?, ?)';
@@ -214,16 +226,6 @@ function updateRoleToDatabase(updtID, updtTitle, updtSalary, updtDeptID) {
             return;
         }
         console.log('Role changed successfully!');
-    });
-}
-
-function closeConnection() {
-    connection.end(err => {
-        if (err) {
-            console.error('Error closing the connection:', err);
-            return;
-        }
-        console.log('Connection closed');
     });
 }
 
