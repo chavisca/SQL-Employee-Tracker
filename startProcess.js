@@ -1,4 +1,4 @@
-const { default: inquirer } = require("inquirer");
+const inquirer = require('inquirer');
 const connection = require('./config/connection');
 
 const choiceList = ['View All Departments', 'View All Roles', 'View All Employees', 'Add A Department', 'Add A Role', 'Add An Employee', 'Update An Employee Role', 'Sum Salaries by Department', 'Delete a Department', 'Exit'];
@@ -133,7 +133,7 @@ async function startProcess() {
                     console.error('Error executing query:', err);
                     return;
                 }
-                console.log('All Departmeents:', results);
+                console.log('All Departments:', results);
             });
             break;
             
@@ -169,7 +169,7 @@ async function startProcess() {
             .catch(error => {
                 console.error('Error:', error);
             });
-            return deptName, deptID;
+            break;
 
         case "Add A Role":
             query = inquirer.prompt(addARole)
@@ -183,7 +183,7 @@ async function startProcess() {
             .catch(error => {
                 console.error('Error:', error);
             });
-            return roleName, roleID, roleSalary, roleDeptID;
+            break;
 
         case "Add An Employee":
             query = inquirer.prompt(addAnEmp)
@@ -192,13 +192,13 @@ async function startProcess() {
                 const empLastName = answers.empLastName;
                 const empDeptID = answers.empDeptID;
                 const empRoleID = answers.empRoleID;
-                const empMgrID = empMgrID;
+                const empMgrID = answers.empMgrID;
                 addEmployeeToDatabase(empFirstName, empLastName, empDeptID, empRoleID, empMgrID);
             })
             .catch(error => {
                 console.error('Error:', error);
             });
-            return empFirstName, empLastName, empDeptID, empRoleID, empMgrID;
+            break;
 
         case "Update An Employee Role":
             query = inquirer.prompt(updateRole)
@@ -212,7 +212,7 @@ async function startProcess() {
             .catch(error => {
                 console.error('Error:', error);
             });
-            return updtID, updTitle, updtSalary, updtDeptID;
+            break;
 
         case "Sum Salaries by Department":
             query = inquirer.prompt(sumSalaries)
@@ -223,7 +223,7 @@ async function startProcess() {
             .catch(error => {
                 console.error('Error:', error);
             });
-            return sumDeptID;
+            break;
 
         case "Delete a Department":
             query = inquirer.prompt(deleteDept)
@@ -234,7 +234,7 @@ async function startProcess() {
             .catch(error => {
                 console.error('Error:', error);
             })
-            return dltDeptID;
+            break;
 
         case "Exit":
             console.log("Exiting...");

@@ -10,12 +10,19 @@ const PORT = process.env.PORT || 3001;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const seedData = fs.readFileSync('./db/seeds.sql', 'utf8');
-
-sequelize.query(seedData).then(() => {
-    console.log('Seed data inserted successfully.');
+sequelize.sync({ force: true }).then(() => {
+    console.log('Database synced successfully.');
     startProcess();
     app.listen(PORT, () => console.log('Now listening'));
 }).catch((error) => {
-    console.error('Error inserting seed data:', error);
+    console.error('Error syncing database:', error);
+});
+
+query = "SELECT * FROM departments";
+connection.query(query, (err, results) => {
+    if (err) {
+        console.error('Error executing query:', err);
+        return;
+    }
+    console.log('All Departments:', results);
 });
