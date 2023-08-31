@@ -1,9 +1,12 @@
 const inquirer = require('inquirer');
-const connection = require('./config/connection');
+const sequelize = require('./config/connection');
+const department = require('./models/department');
+const employee = require('./models/employee');
+const role = require('./models/role');
 
-const choiceList = ['View All Departments', 'View All Roles', 'View All Employees', 'Add A Department', 'Add A Role', 'Add An Employee', 'Update An Employee Role', 'Sum Salaries by Department', 'Delete a Department', 'Exit'];
+const choiceList = ['View All Departments', 'View All Roles', 'View All Employees', 'View all Employees by Manager', 'View all Employees by Department', 'Add A Department', 'Add A Role', 'Add An Employee', 'Update An Employee Manager', 'Sum Salaries by Department', 'Delete a Department', 'Delete a Role', 'Delete an Employee', 'Exit'];
 
-// Inquirer prompt to start the process (continued on startProcess.js)
+// Inquirer prompt to start the process
 const questions = [
     {
         type: 'list',
@@ -13,6 +16,22 @@ const questions = [
     }
   ];
 
+
+const viewByMgr = [
+    {
+        type: 'input',
+        message:  'What is the MANAGER ID of whom you want to view direct reports?',
+        name: 'mgrID'
+    }
+];
+
+const viewByDept = [
+    {
+        type: 'input',
+        message:  'What is the Department ID of whom you want to view direct reports?',
+        name: 'deptID'
+    }
+];
 
 const addADept = [
     {
@@ -30,8 +49,8 @@ const addADept = [
 const addARole = [
     {
         type: 'input',
-        message:  'What is the NAME of the role?',
-        name: 'roleName'
+        message:  'What is the TITLE of the role?',
+        name: 'roleTitle'
     },
     {
         type: 'input',
@@ -78,26 +97,16 @@ const addAnEmp = [
     }
 ];
 
-const updateRole = [
+const updateMgr = [
     {
         type: 'input',
-        message:  'What is the ROLE ID you want to update?',
+        message:  'What is the EMPLOYEE ID that needs a manager update?',
         name: 'updtID'
     },
     {
         type: 'input',
-        message:  'What is the TITLE of the role?',
-        name: 'updtTitle'
-    },
-    {
-        type: 'input',
-        message:  'What is the SALARY of the role?',
-        name: 'updtSalary'
-    },
-    {
-        type: 'input',
-        message:  'What is the DEPARTMENT ID of the role?',
-        name: 'updtDeptID'
+        message:  'What is the new MANAGER ID for this employee?',
+        name: 'updtMgrID'
     }
 ];
 
@@ -117,7 +126,21 @@ const deleteDept = [
     },
 ];
 
+const deleteRole = [
+    {
+        type: 'input',
+        message:  'What is the ROLE ID you want to delete?',
+        name: 'dltRoleID'
+    },
+];
 
+const deleteEmp = [
+    {
+        type: 'input',
+        message:  'What is the EMPLOYEE ID you want to delete?',
+        name: 'dltEmpID'
+    },
+];
 // async loop to queue up selections and to allow for loop exit
 async function startProcess() {
     let shouldContinue = true;
@@ -127,44 +150,98 @@ async function startProcess() {
 
     switch(initChoice) {
         case "View All Departments": 
-            query = "SELECT * FROM departments";
-            connection.query(query, (err, results) => {
-                if (err) {
-                    console.error('Error executing query:', err);
-                    return;
-                }
-                console.log('All Departments:', results);
-            });
+            (async () => {
+            try {
+                const departments = await departments.findAll();
+                console.log(departments);
+            } catch (err) {
+                console.error('Error:', err);
+            }
+            })();
             break;
+        
             
         case "View All Roles":
-            query = "SELECT * FROM roles";
-            connection.query(query, (err, results) => {
-                if (err) {
-                    console.error('Error executing query:', err);
-                    return;
+            (async () => {
+                try {
+                    const roles = await roles.findAll();
+                    console.log(roles);
+                } catch (err) {
+                    console.error('Error:', err);
                 }
-                console.log('All Roles:', results);
+                })();
+                break;
+
+        case "View All Employees":
+            (async () => {
+                try {
+                    const employees = await employees.findAll();
+                    console.log(employees);
+                } catch (err) {
+                    console.error('Error:', err);
+                }
+                })();
+                break;
+        
+        case "View All Employees by Manager":
+            inquirer.prompt(viewByMgr)
+            .then(async (answers) => { 
+                const mgrID = answers.mgrID;
+
+                try {
+                    const employees = await employee.findAll({
+                        where: { manager_id: mgrID }
+                    });
+                    console.log(employees);
+                } catch (err) {
+                    console.error('Error:', err);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
             });
             break;
 
-        case "View All Employees":
-            query = "SELECT * FROM employees";
-            connection.query(query, (err, results) => {
-                if (err) {
-                    console.error('Error executing query:', err);
-                    return;
+        case "View All Employees by Department":
+            inquirer.prompt(viewByDept)
+            .then(async (answers) => { 
+                const deptID = answers.deptID;
+
+                try {
+                    const employees = await employee.findAll({
+                        include: [
+                            {
+                                model: Role,
+                                where: {
+                                    department_id: deptID
+                                }
+                            }
+                        ]
+                    });
+                    console.log(employees);
+                } catch (err) {
+                    console.error('Error:', err);
                 }
-                console.log('All Roles:', results);
+            })
+            .catch(error => {
+                console.error('Error:', error);
             });
             break;
 
         case "Add A Department":
-            query = inquirer.prompt(addADept)
-            .then((answers) => {
+            inquirer.prompt(addADept)
+            .then(async (answers) => {
                 const deptName = answers.deptName;
                 const deptID = answers.deptID;
-                addDepartmentToDatabase(deptName, deptID);
+                try {
+                    const newDepartment = await department.create({
+                        dept_name: deptName,
+                        id: deptID
+                    });
+                    console.log('New department added:', newDepartment)
+                } catch (err) {
+                    console.log('Error adding department:', err);
+                }
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -172,13 +249,23 @@ async function startProcess() {
             break;
 
         case "Add A Role":
-            query = inquirer.prompt(addARole)
-            .then((answers) => {
-                const roleName = answers.roleName;
+            inquirer.prompt(addARole)
+            .then(async (answers) => {
+                const roleTitle = answers.roleTitle;
                 const roleID = answers.roleID;
                 const roleSalary = answers.roleSalary;
                 const roleDeptID = answers.roleDeptID;
-                addRoleToDatabase(roleName, roleID, roleSalary, roleDeptID);
+                try {
+                    const newRole = await role.create({
+                        id: roleID,
+                        title: roleTitle,
+                        salary: roleSalary,
+                        dept_id: roleDeptID
+                    });
+                    console.log('New role added:', newRole)
+                } catch (err) {
+                    console.log('Error adding department:', err);
+                }
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -186,28 +273,54 @@ async function startProcess() {
             break;
 
         case "Add An Employee":
-            query = inquirer.prompt(addAnEmp)
-            .then((answers) => {
+            inquirer.prompt(addAnEmp)
+            .then(async (answers) => {
                 const empFirstName = answers.empFirstName;
                 const empLastName = answers.empLastName;
-                const empDeptID = answers.empDeptID;
+                const empID = answers.empID;
                 const empRoleID = answers.empRoleID;
                 const empMgrID = answers.empMgrID;
-                addEmployeeToDatabase(empFirstName, empLastName, empDeptID, empRoleID, empMgrID);
+                try {
+                    const newEmp = await employee.create({
+                        id: empID,
+                        first_name: empFirstName,
+                        last_name: empLastName,
+                        role_id: empRoleID,
+                        manager_id: empMgrID
+                    });
+                    console.log('New role added:', newEmp)
+                } catch (err) {
+                    console.log('Error adding employee:', err);
+                }
             })
             .catch(error => {
                 console.error('Error:', error);
             });
             break;
 
-        case "Update An Employee Role":
-            query = inquirer.prompt(updateRole)
-            .then((answers) => { 
+        case "Update An Employee Manager":
+            inquirer.prompt(updateMgr)
+            .then(async (answers) => { 
                 const updtID = answers.updtID;
-                const updtTitle = answers.updtTitle;
-                const updtSalary = answers.updtSalary;
-                const updtDeptID = answers.updtDeptID;
-                updateRoleToDatabase(updtID, updtTitle, updtSalary, updtDeptID);
+                const updtMgrID = answers.updtMgrID;
+
+                try {
+                    const [numRowsUpdated, updatedMgr] = await employee.update(
+                        {
+                            manager_ID: updtMgrID,
+                        },
+                        {
+                            where: { id: updtID }
+                        }
+                    );
+                    if (numRowsUpdated > 0) {
+                        console.log('Employee manager updated successfully:', updatedMgr);
+                    } else {
+                        console.log('No role was updated.');
+                    }
+                } catch (err) {
+                    console.error('Error updating employee:', err);
+                }
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -215,25 +328,100 @@ async function startProcess() {
             break;
 
         case "Sum Salaries by Department":
-            query = inquirer.prompt(sumSalaries)
-            .then((answers) => { 
+            inquirer.prompt(sumSalaries)
+            .then(async (answers) => { 
                 const sumDeptID = answers.sumDeptID;
-                sumSalariesByDepartment(sumDeptID);
+
+                try {
+                    const sumResult = await role.sum('salary', {
+                        include: [
+                            {
+                                model: employee,
+                                where: {
+                                    '$role.department_id$': sumDeptID
+                                }
+                            }
+                        ],
+                        includeIgnoreAttributes: false,
+                        includeModel: role
+                    });
+                    console.log(`Total salary for department ${sumDeptID}: ${sumResult}`);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+        break;
+
+        case "Delete a Department":
+            inquirer.prompt(deleteDept)
+            .then(async (answers) => { 
+                const dltDeptID = answers.dltDeptID;
+                
+                try {
+                    const numRowsDeleted = await department.destroy({
+                        where: { id: dltDeptID }
+                    });
+
+                    if (numRowsDeleted > 0) {
+                        console.log('Role deleted succesfully.');
+                    } else {
+                        console.log('No role was deleted.');
+                    }
+                } catch (err) {
+                    console.error('Error deleting role:', err);
+                }
             })
             .catch(error => {
                 console.error('Error:', error);
             });
             break;
 
-        case "Delete a Department":
-            query = inquirer.prompt(deleteDept)
-            .then((answers) => { 
-                const dltDeptID = answers.dltDeptID;
-                deleteDepartmentFromDatabase(dltDeptID);
+        case "Delete a Role":
+        inquirer.prompt(deleteRole)
+        .then(async (answers) => { 
+            const dltRoleID = answers.dltRoleID;
+            
+            try {
+                const numRowsDeleted = await role.destroy({
+                    where: { id: dltRoleID }
+                });
+
+                if (numRowsDeleted > 0) {
+                    console.log('Role deleted succesfully.');
+                } else {
+                    console.log('No role was deleted.');
+                }
+            } catch (err) {
+                console.error('Error deleting role:', err);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+        break;
+
+        case "Delete an Employee":
+            inquirer.prompt(deleteEmp)
+            .then(async (answers) => { 
+                const dltEmpID = answers.dltEmpID;
+                
+                try {
+                    const numRowsDeleted = await employee.destroy({
+                        where: { id: dltEmpID }
+                    });
+
+                    if (numRowsDeleted > 0) {
+                        console.log('Role deleted succesfully.');
+                    } else {
+                        console.log('No role was deleted.');
+                    }
+                } catch (err) {
+                    console.error('Error deleting role:', err);
+                }
             })
             .catch(error => {
                 console.error('Error:', error);
-            })
+            });
             break;
 
         case "Exit":
@@ -241,115 +429,8 @@ async function startProcess() {
             shouldContinue = false;
             break;
         
-        default: console.log("Invalid choice.");
-            break;
         }
     } while (shouldContinue);
 }
-
-// Adds new department to database
-function addDepartmentToDatabase(deptName, deptID) {
-    const query = 'INSERT INTO departments (deptName, deptID) VALUES (?, ?)';
-    connection.query(query, [deptName, deptID], (err, results) => {
-        if (err) {
-            console.error('Error adding department:', err);
-            return;
-        }
-        console.log('Department added successfully!');
-    });
-}
-
-// Adds new role to database
-function addRoleToDatabase(roleName, roleID, roleSalary, roleDeptID) {
-    const query = 'INSERT INTO roles (roleName, roleID, roleSalary, roleDeptID) VALUES (?, ?, ?, ?)';
-    connection.query(query, [roleName, roleID, roleSalary, roleDeptID], (err, results) => {
-        if (err) {
-            console.error('Error adding role:', err);
-            return;
-        }
-        console.log('Role added successfully!');
-    });
-}
-
-// Adds new employee to database
-function addEmployeeToDatabase(empFirstName, empLastName, empDeptID, empRoleID, empMgrID) {
-    const query = 'INSERT INTO roles (empFirstName, empLastName, empDeptID, empRoleID, empMgrID) VALUES (?, ?, ?, ?, ?)';
-    connection.query(query, [empFirstName, empLastName, empDeptID, empRoleID, empMgrID], (err, results) => {
-        if (err) {
-            console.error('Error adding role:', err);
-            return;
-        }
-        console.log('Employee added successfully!');
-    });
-}
-
-// Updates an existing database role
-function updateRoleToDatabase(updtID, updtTitle, updtSalary, updtDeptID) {
-    const query = 'UPDATE roles SET title = ?, salary = ?, deptartment_id = ? WHERE id = ?';
-    connection.query(query, [updtTitle, updtSalary, updtDeptID, updtID], (err, results) => {
-        if (err) {
-            console.error('Error updating role:', err);
-            return;
-        }
-        console.log('Role changed successfully!');
-    });
-}
-
-function sumSalariesByDepartment(sumDeptID) {
-    const query = `
-        SELECT d.dept_name, SUM(r.salary) AS total_salary
-        FROM departments d
-        JOIN roles r ON d.id = r.department_id
-        WHERE d.id = ?
-        GROUP BY d.id, d.dept_name;
-    `;
-
-    connection.query(query, [sumDeptID], (err, results) => {
-        if (err) {
-            console.error('Error calculating salaries by department:', err);
-            return;
-        }
-
-        console.log('Salaries by Department:', results);
-    });
-}
-
-function deleteDepartmentFromDatabase(dltDeptID) {
-    const getDeptNameQuery = 'SELECT dept_name FROM departments WHERE id = ?';
-    connection.query(getDeptNameQuery, [dltDeptID], (err, results) => {
-        if (err) {
-            console.error('Error retrieving department name:', err);
-            return;
-        }
-
-        const departmentName = result[0].dept_name;
-
-    inquirer
-        .prompt([
-            {
-                type: 'confirm',
-                name: 'confirmDelete',
-                message: `Are you sure you want to delete the department "${departmentName}"?`,
-            }
-        ])
-        .then((answers) => {
-            if (answers.confirmDelete) {
-                const deleteQuery = 'DELETE FROM departments WHERE id = ?';
-                connection.query(deleteQuery, [dltDeptID], (err, result) => {
-                    if (err) {
-                        console.error('Error deleting department:', err);
-                        return;
-                    }
-                    console.log('Department deleted successfully!');
-                });
-            } else {
-                console.log('Deletion cancelled.');
-            }
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-        });
-    }
-)};
 
 module.exports = startProcess;
