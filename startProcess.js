@@ -143,12 +143,14 @@ const deleteEmp = [
 ];
 // async loop to queue up selections and to allow for loop exit
 async function startProcess() {
+    console.log('Starting process...');
     let shouldContinue = true;
 
     do {
-        const { initChoice } = await inquirer.prompt(questions);
+        const initChoice = await inquirer.prompt(questions);
+        console.log('Selected choice:', initChoice.initChoice);
 
-    switch(initChoice) {
+    switch(initChoice.initChoice) {
         case "View All Departments": 
             (async () => {
             try {
@@ -431,6 +433,8 @@ async function startProcess() {
         
         }
     } while (shouldContinue);
-}
+
+    console.log('Process completed.');
+};
 
 module.exports = startProcess;
