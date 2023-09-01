@@ -151,7 +151,7 @@ async function startProcess() {
         case "View All Departments": 
             (async () => {
             try {
-                const [departments] = await db.promise().query('SELECT * FROM departments');
+                const [departments] = await db.query('SELECT * FROM departments');
                 console.log(departments);
             } catch (err) {
                 console.error('Error:', err);
@@ -163,7 +163,7 @@ async function startProcess() {
         case "View All Roles":
             (async () => {
                 try {
-                    const [roles] = await db.promise().query('SELECT * FROM roles');
+                    const [roles] = await db.query('SELECT * FROM roles');
                     console.log(roles);
                 } catch (err) {
                     console.error('Error:', err);
@@ -174,7 +174,7 @@ async function startProcess() {
         case "View All Employees":
             (async () => {
                 try {
-                    const [employees] = await db.promise().query('SELECT * FROM employees');
+                    const [employees] = await db.query('SELECT * FROM employees');
                     console.log(employees);
                 } catch (err) {
                     console.error('Error:', err);
@@ -188,7 +188,7 @@ async function startProcess() {
                 const mgrID = answers.mgrID;
 
                 try {
-                    const [employees] = await db.promise().query(`SELECT FROM employees WHERE manager_id = ?`, mgrID);
+                    const [employees] = await db.query(`SELECT FROM employees WHERE manager_id = ?`, mgrID);
                     console.log(employees);
                 } catch (err) {
                     console.error('Error:', err);
@@ -205,7 +205,7 @@ async function startProcess() {
                 const deptID = answers.deptID;
 
                 try {
-                    const employees = await db.promise().query('SELECT employees.id, employees.first_name, employees.last_name' + 'FROM employees ' + 'INNER JOIN roles ON employees.role.id = roles.id ' + 'WHERE roles.department_id = ?', deptID);
+                    const employees = await db.query('SELECT employees.id, employees.first_name, employees.last_name' + 'FROM employees ' + 'INNER JOIN roles ON employees.role.id = roles.id ' + 'WHERE roles.department_id = ?', deptID);
                     console.log('Employees in the department:', employees);
                 } catch (err) {
                     console.error('Error:', err);
@@ -222,7 +222,7 @@ async function startProcess() {
                 const deptName = answers.deptName;
                 const deptID = answers.deptID;
                 try {
-                    const newDepartment = await db.promise().query(`INSERT INTO departments (id, dept_name) VALUES (?, ?)`, deptID, deptName);
+                    const newDepartment = await db.query(`INSERT INTO departments (id, dept_name) VALUES (?, ?)`, deptID, deptName);
                     console.log('New department added:', newDepartment)
                 } catch (err) {
                     console.log('Error adding department:', err);
@@ -241,7 +241,7 @@ async function startProcess() {
                 const roleSalary = answers.roleSalary;
                 const roleDeptID = answers.roleDeptID;
                 try {
-                    const newRole = await db.promise().query(`INSERT INTO roles (id, title, salary, department_id) VALUES (?, ?, ?, ?)`, roleID, roleTitle, roleSalary, roleDeptID);
+                    const newRole = await db.query(`INSERT INTO roles (id, title, salary, department_id) VALUES (?, ?, ?, ?)`, roleID, roleTitle, roleSalary, roleDeptID);
                     console.log('New role added:', newRole)
                 } catch (err) {
                     console.log('Error adding department:', err);
@@ -261,7 +261,7 @@ async function startProcess() {
                 const empRoleID = answers.empRoleID;
                 const empMgrID = answers.empMgrID;
                 try {
-                    const newEmp = await db.promise().query(`INSERT INTO employees (id, first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?, ?)`, empID, empFirstName, empLastName, empRoleID, empMgrID);
+                    const newEmp = await db.query(`INSERT INTO employees (id, first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?, ?)`, empID, empFirstName, empLastName, empRoleID, empMgrID);
                     console.log('New role added:', newEmp)
                 } catch (err) {
                     console.log('Error adding employee:', err);
@@ -279,7 +279,7 @@ async function startProcess() {
                 const updtMgrID = answers.updtMgrID;
 
                 try {
-                    const updtEmpMgr = await db.promise().query(`UPDATE employees SET manager_id = ? WHERE id = ?`, updtMgrID, updtID);
+                    const updtEmpMgr = await db.query(`UPDATE employees SET manager_id = ? WHERE id = ?`, updtMgrID, updtID);
                     console.log('Employee Manager updated:', updtEmpMgr);
                 } catch (err) {
                     console.log('Error updating employee:', err);
@@ -296,7 +296,7 @@ async function startProcess() {
                 const sumDeptID = answers.sumDeptID;
 
                 try {
-                    const sumResult = await db.promise().query(`SELECT SUM(salary) AS total_budget FROM roles where department_id = ?`, sumDeptID);
+                    const sumResult = await db.query(`SELECT SUM(salary) AS total_budget FROM roles where department_id = ?`, sumDeptID);
                     console.log(`Total salary for department ${sumDeptID}: ${sumResult}`);
             } catch (error) {
                 console.error('Error:', error);
@@ -310,7 +310,7 @@ async function startProcess() {
                 const dltDeptID = answers.dltDeptID;
                 
                 try {
-                    const dltDept = await db.promise().query(`DELETE FROM departments WHERE id = ?`, dltDeptID);
+                    const dltDept = await db.query(`DELETE FROM departments WHERE id = ?`, dltDeptID);
                     console.log('Department deleted', dltDept);
                 } catch (err) {
                     console.error('Error deleting role:', err);
@@ -327,7 +327,7 @@ async function startProcess() {
             const dltRoleID = answers.dltRoleID;
             
             try {
-                const dltRole = await db.promise().query(`DELETE FROM roles WHERE id = ?`, dltRoleID);
+                const dltRole = await db.query(`DELETE FROM roles WHERE id = ?`, dltRoleID);
                     console.log('Role deleted', dltRole);
             } catch (err) {
                 console.error('Error deleting role:', err);
@@ -344,7 +344,7 @@ async function startProcess() {
                 const dltEmpID = answers.dltEmpID;
                 
                 try {
-                    const dltEmp = await db.promise().query(`DELETE FROM employees WHERE id = ?`, dltEmpID);
+                    const dltEmp = await db.query(`DELETE FROM employees WHERE id = ?`, dltEmpID);
                     console.log('Employee deleted', dltEmp);
                 } catch (err) {
                     console.error('Error deleting employee:', err);
