@@ -25,7 +25,7 @@ app.use((req, res) => {
 
 const inquirer = require('inquirer');
 
-const choiceList = ['View All Departments', 'View All Roles', 'View All Employees', 'View all Employees by Manager', 'View all Employees by Department', 'Add A Department', 'Add A Role', 'Add An Employee', 'Update An Employee Manager', 'Sum Salaries by Department', 'Delete a Department', 'Delete a Role', 'Delete an Employee', 'Exit'];
+const choiceList = ['View All Departments', 'View All Roles', 'View All Employees', 'View All Employees by Manager', 'View All Employees by Department', 'Add A Department', 'Add A Role', 'Add An Employee', 'Update An Employee Manager', 'Sum Salaries by Department', 'Delete a Department', 'Delete a Role', 'Delete an Employee', 'Exit'];
 
 // Inquirer prompt to start the process
 const questions = [
@@ -37,13 +37,12 @@ const questions = [
     }
   ];
 
-
 const viewByMgr = [
     {
         type: 'input',
         message:  'What is the MANAGER ID of whom you want to view direct reports?',
         name: 'mgrID'
-    }
+    },
 ];
 
 const viewByDept = [
@@ -51,7 +50,7 @@ const viewByDept = [
         type: 'input',
         message:  'What is the Department ID of whom you want to view direct reports?',
         name: 'deptID'
-    }
+    },
 ];
 
 const addADept = [
@@ -64,7 +63,7 @@ const addADept = [
         type: 'input',
         message:  'What is the ID of the department?',
         name: 'deptID'
-    }
+    },
 ];
 
 const addARole = [
@@ -87,7 +86,7 @@ const addARole = [
         type: 'input',
         message:  'What is the DEPARTMENT ID of the role?',
         name: 'roleDeptID'
-    }
+    },
 ];
 
 const addAnEmp = [
@@ -115,7 +114,7 @@ const addAnEmp = [
         type: 'input',
         message:  'What is the MANAGER ID of the employee?',
         name: 'empMgrID'
-    }
+    },
 ];
 
 const updateMgr = [
@@ -128,7 +127,7 @@ const updateMgr = [
         type: 'input',
         message:  'What is the new MANAGER ID for this employee?',
         name: 'updtMgrID'
-    }
+    },
 ];
 
 const sumSalaries = [
@@ -165,9 +164,8 @@ const deleteEmp = [
 // async loop to queue up selections and to allow for loop exit
 async function startProcess() {
     console.log('Starting process...');
-    let shouldContinue = true;
 
-    do {
+    while (true) {
         const { initChoice } = await inquirer.prompt(questions);
         console.log('Selected choice:', initChoice);
 
@@ -181,7 +179,6 @@ async function startProcess() {
             }
             break;
         
-            
         case "View All Roles":
                 try {
                     const [roles] = await db.query('SELECT * FROM roles');
@@ -200,192 +197,140 @@ async function startProcess() {
                 }
                 break;
         
-        case "View All Employees by Manager":
-            inquirer.prompt(viewByMgr)
-            .then(async(answers) => { 
-                const mgrID = answers.mgrID;
-
+        case "View All Employees by Manager":              
                 try {
-                    const [employees] = await db.query(`SELECT * FROM employees WHERE manager_id = ?`, mgrID);
-                    console.log(employees);
+                  const answers = await inquirer.prompt(viewByMgr);
+                  const mgrID = answers.mgrID;
+                  const [employees] = await db.query(`SELECT * FROM employees WHERE manager_id = ?`, mgrID);
+                  console.log(employees);
                 } catch (err) {
                     console.error('Error:', err);
                 }
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
             break;
 
         case "View All Employees by Department":
-            inquirer.prompt(viewByDept)
-            .then(async (answers) => { 
-                const deptID = answers.deptID;
-
                 try {
-                    const employees = await db.query('SELECT employees.id, employees.first_name, employees.last_name' + 'FROM employees ' + 'INNER JOIN roles ON employees.role.id = roles.id ' + 'WHERE roles.department_id = ?', deptID);
-                    console.log('Employees in the department:', employees);
+                  const answers = await inquirer.prompt(viewByDept);
+                  const deptID = answers.deptID;
+                  const employees = await db.query(`
+                  SELECT employees.id, employees.first_name, employees.last_name
+                  FROM employees 
+                  INNER JOIN roles ON employees.role_id = roles.id
+                  WHERE roles.department_id = ?`, deptID);
+                  console.log('Employees in the department:', employees[0]);
                 } catch (err) {
                     console.error('Error:', err);
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
             break;
 
         case "Add A Department":
-            inquirer.prompt(addADept)
-            .then(async (answers) => {
-                const deptName = answers.deptName;
-                const deptID = answers.deptID;
                 try {
-                    const newDepartment = await db.query(`INSERT INTO departments (id, dept_name) VALUES (?, ?)`, deptID, deptName);
-                    console.log('New department added:', newDepartment)
+                    const answers = await inquirer.prompt(addADept);
+                    const deptID = answers.deptID;
+                    const deptName = answers.deptName;
+                    const newDepartment = await db.query(`INSERT INTO departments (id, dept_name) VALUES (?, ?) `, [deptID, deptName]);
+                    console.log('New department added:', newDepartment[0]);
                 } catch (err) {
                     console.log('Error adding department:', err);
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
             break;
 
         case "Add A Role":
-            inquirer.prompt(addARole)
-            .then(async (answers) => {
-                const roleTitle = answers.roleTitle;
-                const roleID = answers.roleID;
-                const roleSalary = answers.roleSalary;
-                const roleDeptID = answers.roleDeptID;
                 try {
-                    const newRole = await db.query(`INSERT INTO roles (id, title, salary, department_id) VALUES (?, ?, ?, ?)`, roleID, roleTitle, roleSalary, roleDeptID);
-                    console.log('New role added:', newRole)
+                  const answers = await inquirer.prompt(addARole);
+                  const roleTitle = answers.roleTitle;
+                  const roleID = answers.roleID;
+                  const roleSalary = answers.roleSalary;
+                  const roleDeptID = answers.roleDeptID;
+                    const newRole = await db.query(`INSERT INTO roles (id, title, salary, department_id) VALUES (?, ?, ?, ?) `, [roleID, roleTitle, roleSalary, roleDeptID]);
+                    console.log('New role added:', newRole[0]);
                 } catch (err) {
                     console.log('Error adding department:', err);
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
             break;
 
         case "Add An Employee":
-            inquirer.prompt(addAnEmp)
-            .then(async (answers) => {
-                const empFirstName = answers.empFirstName;
-                const empLastName = answers.empLastName;
-                const empID = answers.empID;
-                const empRoleID = answers.empRoleID;
-                const empMgrID = answers.empMgrID;
                 try {
-                    const newEmp = await db.query(`INSERT INTO employees (id, first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?, ?)`, empID, empFirstName, empLastName, empRoleID, empMgrID);
-                    console.log('New role added:', newEmp)
+                    const answers = await inquirer.prompt(addAnEmp);
+                    const empFirstName = answers.empFirstName;
+                    const empLastName = answers.empLastName;
+                    const empID = answers.empID;
+                    const empRoleID = answers.empRoleID;
+                    const empMgrID = answers.empMgrID;
+                    const newEmp = await db.query(`INSERT INTO employees (id, first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?, ?) `, [empID, empFirstName, empLastName, empRoleID, empMgrID]);
+                    console.log('New role added:', newEmp[0])
                 } catch (err) {
                     console.log('Error adding employee:', err);
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
             break;
 
         case "Update An Employee Manager":
-            inquirer.prompt(updateMgr)
-            .then(async (answers) => { 
-                const updtID = answers.updtID;
-                const updtMgrID = answers.updtMgrID;
-
                 try {
-                    const updtEmpMgr = await db.query(`UPDATE employees SET manager_id = ? WHERE id = ?`, updtMgrID, updtID);
-                    console.log('Employee Manager updated:', updtEmpMgr);
+                    const answers = await inquirer.prompt(updateMgr);
+                    const updtID = answers.updtID;
+                    const updtMgrID = answers.updtMgrID;
+                    const updtEmpMgr = await db.query(`UPDATE employees SET manager_id = ? WHERE id = ?`, [updtMgrID, updtID]);
+                    console.log('Employee Manager updated:', updtEmpMgr[0]);
                 } catch (err) {
                     console.log('Error updating employee:', err);
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-            break;
+              break;
 
         case "Sum Salaries by Department": 
-            inquirer.prompt(sumSalaries)
-            .then(async (answers) => { 
-                const sumDeptID = answers.sumDeptID;
-
                 try {
-                    const sumResult = await db.query(`SELECT SUM(salary) AS total_budget FROM roles where department_id = ?`, sumDeptID);
-                    console.log(`Total salary for department ${sumDeptID}: ${sumResult}`);
+                    const answers = await inquirer.prompt(sumSalaries);
+                    const sumDeptID = answers.sumDeptID;
+                    const [result] = await db.query(`
+                    SELECT SUM(roles.salary) AS total_budget 
+                    FROM employees
+                    INNER JOIN roles ON employees.role_id = roles.id
+                    WHERE roles.department_id = ?`, sumDeptID);
+                    console.log(`Total salary for department ${sumDeptID}: ${result[0].total_budget}`);
             } catch (error) {
                 console.error('Error:', error);
             }
-        });
         break;
 
         case "Delete a Department":
-            inquirer.prompt(deleteDept)
-            .then(async (answers) => { 
-                const dltDeptID = answers.dltDeptID;
-                
                 try {
+                    const answers = await inquirer.prompt(deleteDept);
+                    const dltDeptID = answers.dltDeptID;
                     const dltDept = await db.query(`DELETE FROM departments WHERE id = ?`, dltDeptID);
                     console.log('Department deleted', dltDept);
                 } catch (err) {
                     console.error('Error deleting role:', err);
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
             break;
 
         case "Delete a Role":
-        inquirer.prompt(deleteRole)
-        .then(async (answers) => { 
-            const dltRoleID = answers.dltRoleID;
-            
             try {
+                const answers = await inquirer.prompt(deleteRole);
+                const dltRoleID = answers.dltRoleID;
                 const dltRole = await db.query(`DELETE FROM roles WHERE id = ?`, dltRoleID);
                     console.log('Role deleted', dltRole);
             } catch (err) {
                 console.error('Error deleting role:', err);
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
         break;
 
         case "Delete an Employee":
-            inquirer.prompt(deleteEmp)
-            .then(async (answers) => { 
-                const dltEmpID = answers.dltEmpID;
-                
                 try {
+                    const answers = await inquirer.prompt(deleteEmp);
+                    const dltEmpID = answers.dltEmpID;
                     const dltEmp = await db.query(`DELETE FROM employees WHERE id = ?`, dltEmpID);
                     console.log('Employee deleted', dltEmp);
                 } catch (err) {
                     console.error('Error deleting employee:', err);
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
             break;
 
         case "Exit":
             console.log("Exiting...");
-            shouldContinue = false;
-            break;
+            return;
         
         }
-    } while (shouldContinue);
-
-    console.log('Process completed.');
-};
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+      
+  }
+}
 
 startProcess();
