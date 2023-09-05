@@ -173,36 +173,58 @@ async function startProcess() {
         case "View All Departments": 
             try {
                 const [departments] = await db.query('SELECT * FROM departments');
-                console.log(departments);
+                console.table(departments);
             } catch (err) {
                 console.error('Error:', err);
             }
             break;
         
-        case "View All Roles":
-                try {
-                    const [roles] = await db.query('SELECT * FROM roles');
-                    console.log(roles);
-                } catch (err) {
-                    console.error('Error:', err);
-                }
-                break;
+          case "View All Roles":
+            try {
+                const [roles] = await db.query(`
+                    SELECT
+                        r.id AS Role_ID,
+                        r.title AS Role_Title,
+                        r.salary AS Salary,
+                        d.dept_name AS Department_Name
+                    FROM roles r
+                    LEFT JOIN departments d ON r.department_id = d.id
+                `);
+                console.table(roles);
+            } catch (err) {
+                console.error('Error:', err);
+            }
+            break;
 
-        case "View All Employees":
-                try {
-                    const [employees] = await db.query('SELECT * FROM employees');
-                    console.log(employees);
-                } catch (err) {
-                    console.error('Error:', err);
-                }
-                break;
-        
+            case "View All Employees":
+              try {
+                  const query = `
+                      SELECT 
+                          e.id AS employee_id,
+                          e.first_name,
+                          e.last_name,
+                          r.title AS role_title,
+                          d.dept_name AS department,
+                          r.salary,
+                          CONCAT(m.first_name, ' ', m.last_name) AS manager
+                      FROM employees e
+                      LEFT JOIN roles r ON e.role_id = r.id
+                      LEFT JOIN departments d ON r.department_id = d.id
+                      LEFT JOIN employees m ON e.manager_id = m.id
+                  `;
+                  const [employees] = await db.query(query);
+                  console.table(employees);
+              } catch (err) {
+                  console.error('Error:', err);
+              }
+              break;
+      
         case "View All Employees by Manager":              
                 try {
                   const answers = await inquirer.prompt(viewByMgr);
                   const mgrID = answers.mgrID;
                   const [employees] = await db.query(`SELECT * FROM employees WHERE manager_id = ?`, mgrID);
-                  console.log(employees);
+                  console.table(employees);
                 } catch (err) {
                     console.error('Error:', err);
                 }
@@ -212,12 +234,12 @@ async function startProcess() {
                 try {
                   const answers = await inquirer.prompt(viewByDept);
                   const deptID = answers.deptID;
-                  const employees = await db.query(`
+                  const [employees] = await db.query(`
                   SELECT employees.id, employees.first_name, employees.last_name
                   FROM employees 
                   INNER JOIN roles ON employees.role_id = roles.id
                   WHERE roles.department_id = ?`, deptID);
-                  console.log('Employees in the department:', employees[0]);
+                  console.table(employees);
                 } catch (err) {
                     console.error('Error:', err);
                 }
@@ -229,7 +251,7 @@ async function startProcess() {
                     const deptID = answers.deptID;
                     const deptName = answers.deptName;
                     const newDepartment = await db.query(`INSERT INTO departments (id, dept_name) VALUES (?, ?) `, [deptID, deptName]);
-                    console.log('New department added:', newDepartment[0]);
+                    console.log('New department added:');
                 } catch (err) {
                     console.log('Error adding department:', err);
                 }
@@ -243,7 +265,7 @@ async function startProcess() {
                   const roleSalary = answers.roleSalary;
                   const roleDeptID = answers.roleDeptID;
                     const newRole = await db.query(`INSERT INTO roles (id, title, salary, department_id) VALUES (?, ?, ?, ?) `, [roleID, roleTitle, roleSalary, roleDeptID]);
-                    console.log('New role added:', newRole[0]);
+                    console.log('New role added:');
                 } catch (err) {
                     console.log('Error adding department:', err);
                 }
@@ -258,7 +280,7 @@ async function startProcess() {
                     const empRoleID = answers.empRoleID;
                     const empMgrID = answers.empMgrID;
                     const newEmp = await db.query(`INSERT INTO employees (id, first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?, ?) `, [empID, empFirstName, empLastName, empRoleID, empMgrID]);
-                    console.log('New role added:', newEmp[0])
+                    console.log('New role added:')
                 } catch (err) {
                     console.log('Error adding employee:', err);
                 }
@@ -270,7 +292,7 @@ async function startProcess() {
                     const updtID = answers.updtID;
                     const updtMgrID = answers.updtMgrID;
                     const updtEmpMgr = await db.query(`UPDATE employees SET manager_id = ? WHERE id = ?`, [updtMgrID, updtID]);
-                    console.log('Employee Manager updated:', updtEmpMgr[0]);
+                    console.log('Employee Manager updated:');
                 } catch (err) {
                     console.log('Error updating employee:', err);
                 }
@@ -296,7 +318,7 @@ async function startProcess() {
                     const answers = await inquirer.prompt(deleteDept);
                     const dltDeptID = answers.dltDeptID;
                     const dltDept = await db.query(`DELETE FROM departments WHERE id = ?`, dltDeptID);
-                    console.log('Department deleted', dltDept);
+                    console.log('Department deleted');
                 } catch (err) {
                     console.error('Error deleting role:', err);
                 }
@@ -307,7 +329,7 @@ async function startProcess() {
                 const answers = await inquirer.prompt(deleteRole);
                 const dltRoleID = answers.dltRoleID;
                 const dltRole = await db.query(`DELETE FROM roles WHERE id = ?`, dltRoleID);
-                    console.log('Role deleted', dltRole);
+                    console.log('Role deleted');
             } catch (err) {
                 console.error('Error deleting role:', err);
             }
@@ -318,7 +340,7 @@ async function startProcess() {
                     const answers = await inquirer.prompt(deleteEmp);
                     const dltEmpID = answers.dltEmpID;
                     const dltEmp = await db.query(`DELETE FROM employees WHERE id = ?`, dltEmpID);
-                    console.log('Employee deleted', dltEmp);
+                    console.log('Employee deleted');
                 } catch (err) {
                     console.error('Error deleting employee:', err);
                 }
